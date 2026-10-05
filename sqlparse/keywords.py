@@ -157,6 +157,9 @@ SQL_REGEX = [
     # FIXME(atronah): never match,
     # because `re.match` doesn't work with look-behind regexp feature
     (r'(?<=\.)[A-ZÀ-Ü]\w*', tokens.Name),  # .'Name'
+    # JOIN before a parenthesis is a clause, not a function (issue615).
+    (r'((LEFT\s+|RIGHT\s+|FULL\s+)?(INNER\s+|OUTER\s+|STRAIGHT\s+)?'
+     r'|(CROSS\s+|NATURAL\s+)?)?JOIN\b', tokens.Keyword),
     (r'[A-ZÀ-Ü]\w*(?=\()', tokens.Name),  # side effect: change kw to func
     (r'-?0x[\dA-F]+', tokens.Number.Hexadecimal),
     (r'-?\d+(\.\d+)?E-?\d+', tokens.Number.Float),
@@ -171,8 +174,6 @@ SQL_REGEX = [
     # cannot be preceded by word character or a right bracket --
     # otherwise it's probably an array index
     (r'(?<![\w\])])(\[[^\]\[]+\])', tokens.Name),
-    (r'((LEFT\s+|RIGHT\s+|FULL\s+)?(INNER\s+|OUTER\s+|STRAIGHT\s+)?'
-     r'|(CROSS\s+|NATURAL\s+)?)?JOIN\b', tokens.Keyword),
     (r'END(\s+IF|\s+LOOP|\s+WHILE|\s+FOR|\s+CASE)?\b', tokens.Keyword),
     (r'IF\s+(NOT\s+)?EXISTS\b', tokens.Keyword),
     (r'NOT\s+NULL\b', tokens.Keyword),
