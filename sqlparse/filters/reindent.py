@@ -191,7 +191,18 @@ class ReindentFilter:
                             if comma is None:
                                 continue
                             token = comma
-                        tlist.insert_before(token, self.nl(offset=adjust))
+                        first = (token.token_first()
+                                 if isinstance(token, sql.Identifier)
+                                 else token)
+                        _, query = (first.token_next_by(
+                            t=(T.Keyword.DML, T.Keyword.DDL))
+                            if isinstance(first, sql.Parenthesis)
+                            else (None, None))
+                        # Query parentheses add their own leading newline.
+                        # An alias wraps them in an Identifier, but must not
+                        # cause the list to add a second break before it.
+                        if query is None:
+                            tlist.insert_before(token, self.nl(offset=adjust))
                         if self.comma_first:
                             _, ws = tlist.token_next(
                                 tlist.token_index(token), skip_ws=False)
