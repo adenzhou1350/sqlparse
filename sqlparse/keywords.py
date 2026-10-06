@@ -199,6 +199,8 @@ SQL_REGEX = [
     (r'[;:()\[\],\.]', tokens.Punctuation),
     # JSON operators
     (r'(\->>?|#>>?|@>|<@|\?\|?|\?&|\-|#\-)', tokens.Operator),
+    # PostgreSQL case-insensitive regular-expression and LIKE operators.
+    (r'!?~~?\*', tokens.Operator.Comparison),
     (r'[<>=~!]+', tokens.Operator.Comparison),
     (r'[+/@#%^&|^-]+', tokens.Operator),
 ]
