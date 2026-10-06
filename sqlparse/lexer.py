@@ -12,7 +12,7 @@ import re
 # http://pygments.org/
 # It's separated from the rest of pygments to increase performance
 # and to allow some customizations.
-from io import TextIOBase
+from io import IOBase
 from threading import Lock
 
 from sqlparse import keywords, tokens
@@ -116,7 +116,7 @@ class Lexer:
 
         ``stack`` is the initial stack (default: ``['root']``)
         """
-        if isinstance(text, TextIOBase):
+        if isinstance(text, IOBase):
             text = text.read()
 
         if isinstance(text, str):

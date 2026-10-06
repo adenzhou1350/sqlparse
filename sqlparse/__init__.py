@@ -30,11 +30,11 @@ def parse(
 
 
 def parsestream(
-    stream: str | IO[str], encoding: str | None = None
+    stream: str | bytes | IO[str] | IO[bytes], encoding: str | None = None
 ) -> Generator[sql.Statement, None, None]:
     """Parses sql statements from file-like object.
 
-    :param stream: A file-like object.
+    :param stream: SQL text or a text or binary file-like object.
     :param encoding: The encoding of the stream contents (optional).
     :returns: A generator of :class:`~sqlparse.sql.Statement` instances.
     """
