@@ -488,6 +488,55 @@ def test_comparison_with_keywords():
     assert isinstance(p.tokens[0], sql.Comparison)
 
 
+@pytest.mark.parametrize('left_comment,right_comment', (
+    ('/* before */', ''),
+    ('', '/* after */'),
+    ('/* before */', '/* after */'),
+    ('-- before\n', '-- after\n'),
+    ('/* first */ /* second */', '/* third */'),
+    ('/*+ hint */', '/*+ hint */'),
+))
+def test_comparison_with_comments(left_comment, right_comment):
+    text = f'foo {left_comment} = {right_comment} bar'
+    statement = sqlparse.parse(text)[0]
+    assert len(statement.tokens) == 1
+    comparison = statement.tokens[0]
+    assert isinstance(comparison, sql.Comparison)
+    assert comparison.left.get_real_name() == 'foo'
+    assert comparison.right.value == 'bar'
+    assert str(comparison) == text
+    assert any(token.ttype in T.Comment for token in comparison.flatten())
+
+
+def test_comparison_with_comments_in_parenthesis():
+    statement = sqlparse.parse('(foo /* before */ = /* after */ bar)')[0]
+    comparison = statement.tokens[0].tokens[1]
+    assert isinstance(comparison, sql.Comparison)
+    assert comparison.left.get_real_name() == 'foo'
+    assert comparison.right.value == 'bar'
+
+
+@pytest.mark.parametrize('text,right', (
+    ('foo >= /* comment */ 25.5', '25.5'),
+    ("foo NOT LIKE /* comment */ 'bar'", "'bar'"),
+    ('foo = /* comment */ DATE(bar)', 'DATE(bar)'),
+    ('foo = /* comment */ NULL', 'NULL'),
+))
+def test_comparison_with_commented_operands(text, right):
+    statement = sqlparse.parse(text)[0]
+    comparison = statement.tokens[0]
+    assert isinstance(comparison, sql.Comparison)
+    assert comparison.right.value == right
+    assert str(comparison) == text
+
+
+def test_comparison_does_not_cross_statement_after_comment():
+    text = 'foo = /* comment */; SELECT bar'
+    first, second = sqlparse.parse(text)
+    assert not any(isinstance(token, sql.Comparison) for token in first.tokens)
+    assert str(first) + str(second) == text
+
+
 def test_comparison_with_floats():
     # issue145
     p = sqlparse.parse('foo = 25.5')[0]

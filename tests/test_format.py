@@ -73,6 +73,20 @@ class TestFormat:
         with pytest.raises(SQLParseError):
             sqlparse.format(sql, strip_comments=None)
 
+    @pytest.mark.parametrize('comment', (
+        '/* comment */', '/* first line\nsecond line */', '-- comment\n',
+    ))
+    def test_reindent_commented_comparison_columns(self, comment):
+        # issue604: an ungrouped comparison split one SELECT list into
+        # nested lists, so every comment increased subsequent indentation.
+        text = f'SELECT leadcol = leadvalue, aaa = {comment} bbb, ccc = ccc, ddd = ddd FROM t'
+        result = sqlparse.format(text, strip_comments=True, reindent=True)
+        assert result == ('SELECT leadcol = leadvalue,\n'
+                          '       aaa = bbb,\n'
+                          '       ccc = ccc,\n'
+                          '       ddd = ddd\n'
+                          'FROM t')
+
     def test_strip_comments_multi(self):
         sql = '/* sql starts here */\nselect'
         res = sqlparse.format(sql, strip_comments=True)
