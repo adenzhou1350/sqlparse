@@ -276,6 +276,15 @@ class ReindentFilter:
         for sgroup in tlist.get_sublists():
             self._process(sgroup)
 
+    def _process_statement(self, tlist):
+        first = tlist.token_first(skip_cm=True)
+        if first and first.ttype == T.Keyword.DCL:
+            # Permission names and REVOKE's FROM are not query boundaries.
+            for sgroup in tlist.get_sublists():
+                self._process(sgroup)
+        else:
+            self._process_default(tlist)
+
     def process(self, stmt):
         self._curr_stmt = stmt
         self._process(stmt)
