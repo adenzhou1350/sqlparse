@@ -606,6 +606,16 @@ class TestFormatReindent:
             '       nvl(1)',
             'from dual'])
 
+    @pytest.mark.parametrize('expressions', [
+        ['a', 'b', '(a-b)'],
+        ['(a-b)', 'a', 'b'],
+        ['a', '(a-b)', 'b'],
+    ])
+    def test_parenthesized_select_list(self, expressions):
+        query = f"SELECT {', '.join(expressions)} FROM bla"
+        expected = 'SELECT ' + ',\n       '.join(expressions) + '\nFROM bla'
+        assert sqlparse.format(query, reindent=True) == expected
+
     def test_insert_values(self):
         # issue 329
         f = lambda sql: sqlparse.format(sql, reindent=True)

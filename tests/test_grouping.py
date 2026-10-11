@@ -207,6 +207,46 @@ def test_grouping_identifier_list():
     assert isinstance(p.tokens[0].tokens[1], sql.IdentifierList)
 
 
+@pytest.mark.parametrize('expressions', [
+    ['a', 'b', '(a-b)'],
+    ['(a-b)', 'a', 'b'],
+    ['a', '(a-b)', 'b'],
+    ['(a)', '(b)'],
+    ['a', '((b-c))'],
+    ['a', '(SELECT b FROM c)'],
+])
+def test_grouping_parenthesized_select_list(expressions):
+    # issue343: parentheses must not split a comma-separated select list.
+    query = f"SELECT {', '.join(expressions)} FROM bla"
+    parsed = sqlparse.parse(query)[0]
+    _, identifiers = parsed.token_next_by(i=sql.IdentifierList)
+    assert identifiers is not None
+    assert [str(token) for token in identifiers.get_identifiers()] == expressions
+    assert str(parsed) == query
+    assert all(token.parent is identifiers for token in identifiers.tokens)
+
+
+@pytest.mark.parametrize('rows', [
+    ['(1, 2)', '(3, 4)', '(5, 6)'],
+    ['((1), (2))', '((3), (4))'],
+    ['((SELECT a, (b-c) FROM bar), 1)', '(2, 3)'],
+])
+def test_grouping_values_rows_with_parenthesized_expressions(rows):
+    query = f"INSERT INTO foo VALUES {', '.join(rows)}"
+    parsed = sqlparse.parse(query)[0]
+    _, values = parsed.token_next_by(i=sql.Values)
+    assert values is not None
+    assert [str(token) for token in values.tokens
+            if isinstance(token, sql.Parenthesis)] == rows
+    assert not any(isinstance(token, sql.IdentifierList)
+                   for token in values.tokens)
+    assert str(parsed) == query
+    for row in values.get_sublists():
+        _, identifiers = row.token_next_by(i=sql.IdentifierList)
+        assert identifiers is not None
+        assert len(list(identifiers.get_identifiers())) == 2
+
+
 def test_grouping_identifier_list_subquery():
     """identifier lists should still work in subqueries with aliases"""
     p = sqlparse.parse("select * from ("

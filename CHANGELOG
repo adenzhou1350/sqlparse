@@ -1,7 +1,10 @@
 Development Version
 -------------------
 
-Nothing yet.
+Bug Fixes
+
+* Keep parenthesized expressions in comma-separated identifier lists
+  while preserving separate VALUES rows (issue343).
 
 
 Release 0.6.0 (Aug 13, 2026)

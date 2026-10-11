@@ -310,7 +310,7 @@ def group_operator(tlist):
 def group_identifier_list(tlist):
     m_role = T.Keyword, ('null', 'role')
     sqlcls = (sql.Function, sql.Case, sql.Identifier, sql.Comparison,
-              sql.IdentifierList, sql.Operation)
+              sql.IdentifierList, sql.Operation, sql.Parenthesis)
     ttypes = (T_NUMERICAL + T_STRING + T_NAME
               + (T.Keyword, T.Comment, T.Wildcard))
 
@@ -318,6 +318,10 @@ def group_identifier_list(tlist):
         return token.match(T.Punctuation, ',')
 
     def valid(token):
+        if (isinstance(token, sql.Parenthesis)
+                and isinstance(token.parent, sql.Values)):
+            # VALUES rows are separate tuples, not select-list expressions.
+            return False
         return imt(token, i=sqlcls, m=m_role, t=ttypes)
 
     def post(tlist, pidx, tidx, nidx):
@@ -468,8 +472,8 @@ def group(stmt):
         group_assignment,
 
         align_comments,
-        group_identifier_list,
         group_values,
+        group_identifier_list,
     ]:
         func(stmt)
     return stmt
